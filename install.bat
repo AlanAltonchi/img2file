@@ -22,8 +22,8 @@ taskkill /IM img2file.exe /F >nul 2>&1
 :: Copy exe
 copy /Y "%EXE_SRC%" "%INSTALL_DIR%\img2file.exe" >nul
 
-:: Create scheduled task (runs at logon, hidden)
-schtasks /Create /TN "%TASK_NAME%" /TR "\"%INSTALL_DIR%\img2file.exe\"" /SC ONLOGON /RL LIMITED /F >nul 2>&1
+:: Register to run at logon (current user, no admin needed)
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "%TASK_NAME%" /t REG_SZ /d "\"%INSTALL_DIR%\img2file.exe\"" /f >nul 2>&1
 
 :: Start it now
 start "" "%INSTALL_DIR%\img2file.exe"
