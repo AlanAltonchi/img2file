@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            msystem: MINGW64
+            prefix: mingw-w64-x86_64
+          - arch: x86
+            msystem: MINGW32
+            prefix: mingw-w64-i686
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: ${{ matrix.prefix }}-gcc ${{ matrix.prefix }}-cmake make
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      - name: Package release
+        run: |
+          mkdir release
+          copy build\img2file.exe release\
+          copy install.bat release\
+          copy uninstall.bat release\
+          copy README.md release\
+          copy LICENSE release\
+        shell: cmd
+
+      - name: Create zip
+        run: Compress-Archive -Path release\* -DestinationPath img2file-${{ github.ref_name }}-${{ matrix.arch }}.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: img2file-${{ matrix.arch }}
+          path: img2file-${{ github.ref_name }}-${{ matrix.arch }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.zip
+          generate_release_notes: true
