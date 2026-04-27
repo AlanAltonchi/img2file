@@ -9,6 +9,9 @@ target_link_libraries(img2file PRIVATE
     gdiplus ole32 shell32 shlwapi oleaut32 uuid psapi
 )
 
+# Statically link libgcc/libstdc++/winpthread so the exe has no MinGW DLL deps
+target_link_options(img2file PRIVATE -static -static-libgcc -static-libstdc++)
+
 # Strip symbols in release for smallest binary
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_link_options(img2file PRIVATE -s)
